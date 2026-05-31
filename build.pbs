@@ -1,0 +1,36 @@
+#!/bin/bash
+#PBS -N fa3-install
+#PBS -l select=1:ngpus=1:mem=64G
+#PBS -l walltime=01:00:00
+#PBS -j oe
+#PBS -o fa3-install.log
+
+set -euo pipefail
+
+cd $HOME/flash-attention
+
+module purge
+module load cuda/13.0 gnu/gcc-12.3
+eval "$(/usr/local/anaconda2025/bin/conda shell.bash hook)"
+
+conda activate megatron-lm
+
+export MAX_JOBS=96
+
+# ====== Optional ======
+# # FA2 and FA4, and CuteDSL FA3
+# pip install -e . -v --no-build-isolation
+# # for CuteDSL kernels
+# pip install 'quack-kernels[cu13]' --extra-index-url https://download.pytorch.org/whl/cu130
+# ====== Optional ======
+
+# Cute FA3
+cd hopper
+mkdir -p flash_attn_3 && cp *.py flash_attn_3/
+export TMPDIR=$SCRATCH/pip_tmp
+mkdir -p $TMPDIR
+pip install -e . -v --no-build-isolation
+rm -rf $TMPDIR
+
+echo "Installed FlashAttention packages:"
+pip freeze | grep "flash-attention.git"
